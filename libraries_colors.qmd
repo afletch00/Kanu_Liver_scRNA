@@ -1,0 +1,238 @@
+---
+title: "load_libraries_color_palettes"
+author: "Ashley Fletcher"
+format: html
+editor: visual
+embed-resources: true
+echo: false
+clean: true
+---
+
+## Load libraries and colors from libraries_colors.qmd
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = "/hpc/group/peterallen/af206/scRNA-seq/FINAL_ANALYSIS/for_paper/figures_code")
+```
+
+### Load libraries
+
+```{r libraries, echo = FALSE}
+library(Seurat)
+library(patchwork)
+library(dplyr)
+library(ggplot2)
+library(scRepertoire)
+library(tidyverse)
+library(purrr)
+library(sctransform)
+library(pheatmap)
+library(openxlsx)
+library(reshape2)
+library(gridExtra)
+library(grid)
+library(lattice)
+library(scCustomize)
+library(RColorBrewer)
+library(EnhancedVolcano)
+library(presto)
+library(DESeq2)
+library(scDblFinder)
+library(harmony)
+library(viridis)
+library(GSEABase)
+library(readr)
+library(AUCell)
+```
+
+### Colors
+
+```{r color, include = F}
+clone.col <- c("grey","#0D0887FF","purple3","magenta3","#ED7953FF","#F0F921FF")
+clone.col3 <- c("#0D0887FF","#7301A8FF","grey")
+clone.col5 <- c("grey","#0D0887FF","purple3","magenta3","#ED7953FF")
+
+colorblind_vector <- colorRampPalette(rev(c("#0D0887FF", "#47039FFF", 
+                                                       "#7301A8FF", "#9C179EFF", 
+                                                       "#BD3786FF", "#D8576BFF",
+                                                       "#ED7953FF","#FA9E3BFF", 
+                                                       "#FDC926FF", "#F0F921FF")))
+
+
+colors_32 <- c("#1F77B4FF", "orangered4", "#D78513FF", "lightblue1", "tomato",
+               "darkolivegreen3", "#C4ABC4FF", "#A47B51FF", "rosybrown1",
+               "gray23","skyblue2", "mediumpurple3",  "firebrick3","cadetblue",
+               "#B04B7BFF","royalblue3",
+               "#C8BD8FFF", "#FB9999FF", "dodgerblue", "black", "#5A9825FF","yellow3",
+               "coral3", "cyan3","#0D0887FF", "pink3", "azure3", "darkorange4", 
+               "#E2C57DFF", "slateblue4", 
+               "mediumorchid1", "#6B722AFF")
+                                                       
+colors_35 <- c("skyblue2", "orangered4", "#D78513FF","pink3",  "#1F77B4FF", 
+                          "green4","magenta2",  "#C8BD8FFF","tomato1", # Can adjust past here
+                          "azure3", "mediumpurple3", "darkolivegreen2",
+                          "rosybrown1","#A47B51FF","#47039FFF", "cyan3", 
+                          "cadetblue1","#E2C57DFF", "dodgerblue", "black",
+                          "#B04B7BFF","olivedrab3" ,
+                          "coral3","plum3", "#868673FF", "darkorange", 
+                         "yellow3","slateblue4", "royalblue3", "lightblue2", 
+                          "#6B722AFF","magenta4","#E5BE9BFF", 
+                         "#A4DA87FF", "#FB9999FF","grey57")
+
+colors_39 <- c("#1F77B4FF", "orangered","gray61",  "#D78513FF","#5A9825FF",  
+                          "royalblue3","skyblue2", "#C4ABC4FF", "tomato3", "navy",
+                          "#868673FF", "mediumpurple3", "darkgreen",
+                          "brown","gray23", "#E5BE9BFF","cadetblue", "cyan3", "#E2C57DFF",
+                          "#A4DA87FF","red2", "magenta2",
+                          "#C8BD8FFF", "#FB9999FF","mediumorchid", 
+                          "dodgerblue3", "black","darkolivegreen3" ,"#B04B7BFF",
+                          "coral3","pink3", "darkorange3", "slateblue4", "plum4",
+                          "lightblue2", "purple1",
+                          "#6B722AFF", "magenta4","yellow3")
+                          
+colors_40 <- c("#1F77B4FF", "orangered","gray61",  "#D78513FF","#5A9825FF",  
+                          "royalblue3","skyblue2", "#C4ABC4FF", "tomato3", "navy",
+                          "#868673FF", "mediumpurple3", "darkgreen",
+                          "brown","gray23", "#E5BE9BFF","cadetblue", "cyan3", "#E2C57DFF",
+                          "#A4DA87FF","red2", "magenta2",
+                          "#C8BD8FFF", "#FB9999FF","mediumorchid", 
+                          "dodgerblue3", "black","darkolivegreen3" ,"#B04B7BFF",
+                          "coral3","pink3", "darkorange3", "slateblue4", "plum4",
+                          "lightblue2", "purple1",
+                          "#6B722AFF", "magenta4","yellow3", "#A47B51FF")
+
+colors_56 <- c("#1F77B4FF", "orangered","gray61",  "#D78513FF","#5A9825FF",  
+                          "royalblue3","skyblue2", "#C4ABC4FF", "tomato3", "navy",
+                          "#868673FF", "mediumpurple3", "darkgreen","#B04B7BFF",
+                          "gray23", "#E5BE9BFF","cadetblue", "cyan3", "#E2C57DFF",
+                          "#A4DA87FF","red3", "grey", "orangered4","mediumpurple4", 
+                          "#C8BD8FFF", "#FB9999FF","mediumorchid", "green4","magenta2", 
+                          "dodgerblue3", "black","darkolivegreen3" ,"#B04B7BFF",
+                          "coral3","pink3", "darkorange3", "slateblue4", "plum4",
+                          "lightblue2", "cyan", "darkorchid4", "khaki1", 
+                          "#6B722AFF", "magenta4","yellow3", "#A47B51FF",
+                          "grey57", "cadetblue3", "purple1", "yellow", "orange", "green",
+                            "blue", "red", "deepskyblue", "lemonchiffon")
+
+colors_22 <- c("skyblue2", "orangered3", "cyan3",  "#D78513FF","pink3", 
+               "#1F77B4FF","magenta2", "green4", "mediumpurple4",
+                          "tomato1",# Can adjust past here
+                          "azure3",
+                          "rosybrown1","#A47B51FF","navy",
+                          "cadetblue", "#B04B7BFF",
+                           "#6B722AFF", "slateblue1", "grey57", "royalblue1", 
+                          "darkorange3", "#C8BD8FFF")
+
+colors_25 <- c("skyblue2", "orangered3", "#D78513FF","pink3",  "#1F77B4FF", 
+                          "green4","magenta2", "mediumpurple4",
+                          "tomato1",# Can adjust past here
+                          "azure3", "darkolivegreen2",
+                          "rosybrown1","#A47B51FF","navy", "cyan3", 
+                          "cadetblue", "#B04B7BFF",
+                           "#6B722AFF", "slateblue1", "grey57", "royalblue1", 
+                          "yellow3", "darkorange3", "#C8BD8FFF",
+                          "lightblue3")
+                          
+colors_28 <- c("skyblue2", "orangered4", "#D78513FF","pink3",  "#1F77B4FF", 
+                          "green4","magenta2",  "#C8BD8FFF","tomato1", # 
+                          "azure3", "mediumpurple3", "darkolivegreen2",
+                          "rosybrown1","#A47B51FF","#47039FFF", "cyan3", 
+                          "cadetblue1","#E2C57DFF", "dodgerblue", "black",
+                          "#B04B7BFF","olivedrab3" ,"darkorange",
+                          "slateblue4", "royalblue1", "lightblue2", 
+                          "#6B722AFF","magenta4")
+
+
+all_cells_cols <- c("#90CAF8FF","#41A5F4FF", "royalblue",  "#1465BFFF", "#0C46A0FF", "navy",
+                   "cyan", "blue",
+                    "#FFDFB2FF", "#FFCC7FFF", "#FFB74CFF", "#FFA626FF", 
+            "#FF9800FF", "#FA8C00FF", "#F47B00FF", "#EE6C00FF",
+            "#E55100FF",
+                    "#D1C4E9FF", "#B29DDAFF", "#9474CCFF", 
+              "#7E57C1FF","purple3", "#6639B7FF", "#5E34B1FF", "#512CA7FF", "#45269FFF",
+              "#311A92FF",
+                    "#EE9999FF", "#E57272FF", "#F34335FF", "firebrick4",
+                    "#B2DFDAFF", "#7FCBC4FF", "#4CB6ACFF", "#26A599FF", "#009687FF",
+                    "#00887AFF",  "#00685BFF", "#004C3FFF", "#90A4ADFF", 
+                    "#78909BFF", "#5F7D8BFF",
+                                "#536D79FF", "#455964FF", "#37464EFF", "#263238FF",
+                    "black", "#D7CCC7FF", "#BBAAA4FF", "#A0877FFF", 
+                                   "#8C6D63FF", "#A47B51FF","#795447FF", "#5D3F37FF",
+                    "#4D332DFF","#3E2622FF") # "#F34335FF" "#EE5250FF", 
+
+reds <- c("#FFEBEDFF", "#EE9999FF", "#E57272FF", "#EE5250FF", 
+          "#F34335FF","#FFCCD2FF", "#E53934FF",
+                     "#D22E2EFF",  "#FCE4EBFF", "#C52727FF",
+          "#B71B1BFF","#FFF2DFFF",
+                     "#F38EB1FF", "#F06192FF", "#EB3F79FF", 
+          "#F8BAD0FF","#E91E63FF", "#D81A5FFF",
+                     "#C1185AFF", "#AC1357FF", "#870D4EFF")
+                     
+blues <- c("#E3F2FDFF", "#BADEFAFF", "#90CAF8FF", "#64B4F6FF", "#41A5F4FF", 
+           "#2096F2FF", "#1E87E5FF",
+           "#1976D2FF", "#1465BFFF", "#0C46A0FF", "#DFF7F9FF", "#B2EBF2FF", 
+           "#7FDEEAFF", "#4CD0E0FF",
+           "#26C5D9FF", "#00BBD3FF", "#00ACC0FF","#0097A6FF", "#00838EFF", "#005F64FF")
+
+
+purples <- c("#E0BEE6FF", "#CD92D8FF", "#B967C7FF", "#AB46BBFF",
+             "#9B26B0FF", "#8D24AAFF",
+                        "#7A1FA1FF", "#6A1A99FF", "#4A138CFF", 
+             "#E7EAF6FF", "#C5CAE9FF", "#9FA7D9FF",
+                        "#7985CBFF", "#5B6BBFFF", "#3F51B4FF", "#3948ABFF",
+                        "#303F9FFF", "#273492FF", "#19227EFF", "purple")
+
+                        
+
+colors_5 <- c( "#1F77B4FF","orangered4","#FA9E3BFF","#5A9825FF","yellow3")
+colors_3 <- c("cyan3", "magenta4", "gray57")
+
+colors_tcrs <- c("orangered4", "#D78513FF", "lightblue1", "tomato", "darkolivegreen3", 
+                          "#C4ABC4FF", "#A47B51FF", "rosybrown1",
+                          "gray23","skyblue2", "mediumpurple3",  "firebrick3",
+                          "cadetblue","#B04B7BFF","royalblue3",
+                          "#C8BD8FFF", "#FB9999FF", "dodgerblue", "black", 
+                          "#5A9825FF","yellow3",
+                          "coral3", "cyan3","#0D0887FF", "pink3", "azure3",
+                          "darkorange4", "#E2C57DFF", "slateblue4", 
+                          "mediumorchid1", "#6B722AFF") 
+
+colors_60 <- c("#E41A1C","#377EB8","#4DAF4A","#984EA3","#FF7F00",
+            "#FFFF33", "#A65628", "#F781BF", "#999999",
+            "#66C2A5", "#FC8D62", "#8DA0CB", "#E78AC3",
+            "#A6D854", "#FFD92F", "#E5C494", "#B3B3B3",
+            "#1B9E77", "#D95F02", "#7570B3", "#E7298A", 
+            "#66A61E", "#E6AB02", "#A6761D", "#666666",
+            "#8DD3C7", "#FFFFB3", "#BEBADA", "#FB8072", 
+            "#80B1D3", "#FDB462", "#B3DE69", "#FCCDE5",
+            "#D9D9D9", "#BC80BD", "#CCEBC5", "#FFED6F", 
+            "#A50F15", "#08519C", "#006D2C", "#54278F",
+            "#B15928", "#F0027F", "#377EB8", "#FF7F00", 
+            "#1F78B4", "#33A02C", "#6A3D9A", "#E31A1C",
+            "#FDBF6F", "#B2DF8A", "#CAB2D6", "#FFFF99", 
+            "#E41A1C", "#377EB8", "#4DAF4A", "#FF7F00",
+            "#A65628", "#F781BF")
+
+PalettePlot(pal = DiscretePalette_scCustomize(num_colors = 36, palette = "polychrome"))
+polychrome_pal <- DiscretePalette_scCustomize(num_colors = 36, palette = "polychrome")
+```
+
+# Heatmap Colors
+
+```{r}
+color_palette <- brewer.pal(11, "RdYlBu")
+color_palette <- colorRampPalette(brewer.pal(11, "RdYlBu"))(25)
+color <- colorRampPalette((c("steelblue", "lightgoldenrod1", "firebrick")))(10)
+
+group_col2 = list(
+  Group = c(`LGD-LGD`="#fc6a03", `LGD-HGD`="#63c5da", 
+            `LGD-INV`="#710193")
+)
+
+group_col3 = list(
+  Group = c(`LGD-LGD`="#fc6a03", `LGD-HGD`="#63c5da", 
+            `LGD-INV`="#710193", `LGD-HGD-PDAC` = "grey")
+)
+
+breaksList1 = seq(0, 10, by = 1)
+```
