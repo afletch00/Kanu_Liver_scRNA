@@ -436,7 +436,9 @@ gp <- ggplot(m.df.allM, aes(x = Sample_Type, y = value)) +
 gp # 8.3x4.3
 
 # *Fig. 3A -----
-
+# https://www.borch.dev/uploads/screpertoire/
+# Palettes - https://colorspace.r-forge.r-project.org/articles/hcl_palettes.html
+# 
 ### Remove the TCR genes- use this UMAP -----
 curr.count <- integrated_tcr@assays$SCT@counts
 rownames(curr.count)[1:10]
@@ -471,52 +473,69 @@ Tclus.noTCRgenes <- FindClusters(Tclus.noTCRgenes, resolution = 0.7, verbose = T
 
 ### scRepertoire -----
 
+# Get file names -----
 # https://ncborcherding.github.io/vignettes/vignette.html
-tcr.outs <- "/hpc/group/peterallen/af206/scRNA-seq/contig_files"
-### PT1 = 26, PT3 = 36, PT3 = 36 -----
-L1.1t <- read.csv(file.path(tcr.outs, "PT1_LiverA.csv"))
-L2.1t <- read.csv(file.path(tcr.outs, "PT1_LiverB.csv"))
-L3.1t <- read.csv(file.path(tcr.outs, "PT1_LiverC.csv"))
-PBMC.1t <- read.csv(file.path(tcr.outs, "PT1_PBMC.csv"))
-Panc.1t <- read.csv(file.path(tcr.outs, "PT1_Panc.csv"))
+tcr.outs <- "/hpc/group/peterallen/af206/scRNA-seq/contig_files/All"
+sc_tcr_dirs <- list.files(path = tcr.outs, full.names = T)
+sc_tcr_dirs
 
-L1.2t <- read.csv(file.path(tcr.outs, "PT2_LiverA.csv"))
-L2.2t <- read.csv(file.path(tcr.outs, "PT2_LiverB.csv"))
-L3cryo.2t <- read.csv(file.path(tcr.outs, "PT2_LiverC_Cryo.csv"))
-PBMC.2t <- read.csv(file.path(tcr.outs, "PT2_PBMC.csv"))
-Panc.2t <- read.csv(file.path(tcr.outs, "PT2_Panc.csv"))
+sc_tcrs <- sc_tcr_dirs[c(2:16)]
 
-L1.3t <- read.csv(file.path(tcr.outs, "PT3_LiverA.csv"))
-L2.3t <- read.csv(file.path(tcr.outs, "PT3_LiverB.csv"))
-L3.3t <- read.csv(file.path(tcr.outs, "PT3_LiverC.csv"))
-PBMC.3t <- read.csv(file.path(tcr.outs, "PT3_PBMC.csv"))
-Panc.3t <- read.csv(file.path(tcr.outs, "PT3_Panc.csv"))
+# Make metadata file -----
+meta_data <- data.frame(path = sc_tcrs) %>%
+  dplyr::mutate(sample_fullname = basename(path),
+                sample_id = gsub(".csv","",sample_fullname)) %>%
+  separate(
+    col = sample_id,
+    into = c("patient_id", "sample_type"),
+    sep = "_",
+    remove = F
+  ) %>%
+  dplyr::mutate(match_id = paste0(patient_id, ":", sample_type))
+
+meta_data$sample_type <- ifelse(
+  grepl("^Liver[ABC]$", meta_data$sample_type),
+  sub("[ABC]$", "", meta_data$sample_type),
+  meta_data$sample_type
+)
+
+filtered_contig_t_list <- lapply(meta_data$path,read_csv)
+names(filtered_contig_t_list) <- meta_data$match_id
+
+# Get combined TCR object -----
+combined <- combineTCR(filtered_contig_t_list,
+                       sample = meta_data$match_id,
+                       removeNA = FALSE, 
+                       removeMulti = FALSE, 
+                       filterMulti = FALSE)
+# add some metadata variables
+combined <- addVariable(combined, 
+                        variable.name = "sample_type", 
+                        variables = meta_data$sample_type)
+
+combined <- addVariable(combined, 
+                        variable.name = "patient_id", 
+                        variables = meta_data$patient_id)
 
 
-contig_list <- list(L1.1t, L2.1t, L3.1t, Panc.1t, PBMC.1t,
-                    L1.2t, L2.2t, L3cryo.2t, Panc.2t, PBMC.2t,
-                    L1.3t, L2.3t, L3.3t, Panc.3t, PBMC.3t)
+# Chain and sequence setting -----
+chain_choice <- "TRB"
+seq_choice <- "aa"
 
 # FUnction to ilter to non-expanded clones
-filter_nonexpand <- function(contig){
-  tab <- table(contig$cdr3_nt)
+filter_nonexpand <- function(contiglist){
+  tab <- table(contiglist$cdr3_nt)
   tab.df <- as.data.frame(tab)
   remove <- tab.df %>%
     filter(Freq > 1)
-  contig <- contig %>%
+  contiglist <- contiglist %>%
     filter(cdr3_nt %in% remove$Var1)
-  return(contig)
+  return(contiglist)
 }
 
-contig_list_filt <- lapply(contig_list1, filter_nonexpand)
+contig_list_filt <- lapply(filtered_contig_t_list, filter_nonexpand)
 
-combined <- combineTCR(contig_list,
-                       samples = c("PT1","PT1","PT1","PT1","PT1",
-                                   "PT2","PT2","PT2","PT2","PT2",
-                                   "PT3","PT3","PT3","PT3","PT3"),
-                       ID = c("LiverA", "LiverB", "LiverC", "Panc", "PBMC",
-                              "LiverA", "LiverB", "LiverC_Cryo", "Panc", "PBMC",
-                              "LiverA", "LiverB", "LiverC", "Panc", "PBMC"),
+combined <- combineTCR(contig_list_nonExp,
                        removeNA = T, 
                        removeMulti = F)
 
@@ -638,7 +657,7 @@ sorted_aa1 <- sort(Panc.1_aa, decreasing = TRUE)
 Panc.1_aa_df <- data.frame(sorted_aa1)
 top_20aa_1 <- names(sorted_aa1)[1:20]
 top_20aa_1
-
+top_20aa_1.df <- as.data.frame(top_20aa_1)
 
 ### pt2 -----
 Panc.2_counts <- liverAs[[5]]
@@ -656,6 +675,7 @@ sorted_aa2 <- sort(Panc.2_aa, decreasing = TRUE)
 Panc.2_aa_df <- data.frame(sorted_aa2)
 top_20aa_2 <- names(sorted_aa2)[1:20]
 top_20aa_2
+top_20aa_2.df <- as.data.frame(top_20aa_2)
 
 ### pt3 -----
 Panc.3_counts <- liverAs[[8]]
@@ -673,8 +693,41 @@ sorted_aa3 <- sort(Panc.3_aa, decreasing = TRUE)
 Panc.3_aa_df <- data.frame(sorted_aa3)
 top_20aa_3 <- names(sorted_aa3)[1:20]
 top_20aa_3
+top_20aa_3.df <- as.data.frame(top_20aa_3)
 
-### Plot ribbons -----
+
+## Match top 20 per patient to liver and blood TCRs -----
+pt1 <- rbind(liverAs[[1]], liverAs[[2]], liverAs[[3]])
+pt2 <- rbind(liverAs[[4]], liverAs[[5]], liverAs[[6]])
+pt3 <- rbind(liverAs[[7]], liverAs[[8]], liverAs[[9]])
+
+# Filter to top 20 panc aas -----
+pt1.top20 <- pt1 %>%
+  filter(CTaa %in% top_20aa_1)
+pt1.top20.tab <- table(pt1.top20$sample, pt1.top20$ID, pt1.top20$CTaa)
+pt1.top20.tab <- as.data.frame(pt1.top20.tab)
+
+pt2.top20 <- pt2 %>%
+  filter(CTaa %in% top_20aa_2)
+pt2.top20.tab <- table(pt2.top20$sample, pt2.top20$ID, pt2.top20$CTaa)
+pt2.top20.tab <- as.data.frame(pt2.top20.tab)
+
+pt3.top20 <- pt3 %>%
+  filter(CTaa %in% top_20aa_3)
+pt3.top20.tab <- table(pt3.top20$sample, pt3.top20$ID, pt3.top20$CTaa)
+pt3.top20.tab <- as.data.frame(pt3.top20.tab)
+
+list.top.20 <- list("pt1.top.20.panc" = pt1.top20.tab,
+                    "pt2.top.20.panc" = pt2.top20.tab,
+                    "pt3.top.20.panc" = pt3.top20.tab)
+
+openxlsx::write.xlsx(list.top.20, file = "top_20_clones_pancs_tracked.xlsx", asTable = TRUE,
+                     colNames = TRUE, rowNames = TRUE)
+
+### Plot ribbons (Sankey) -----
+openxlsx::write.xlsx(liverAs, file = "data_for_sankeys.xlsx", asTable = TRUE,
+                     colNames = TRUE, rowNames = TRUE)
+
 p1 <- clonalCompare(liverAs, 
                     samples = c("PT1_LiverA", "PT1_Panc","PT1_PBMC"),
                     cloneCall="aa", 
