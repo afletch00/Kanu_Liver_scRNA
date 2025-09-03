@@ -1,4 +1,6 @@
 # Kanu_Liver_scRNA
+# GEO Accession Number: GSE300304 | BioProject: PRJNA1277284
+# https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE300304
 
 BACKGROUND: 
 Pancreatic ductal adenocarcinoma (PDAC) is characterized by exceedingly high rates of metastatic progression, with the liver representing the most common site of distant spread. Here, we established a platform for multisite immune profiling of human PDAC encompassing the tumor, peripheral circulation, and premetastatic liver, to more comprehensively study how various immune subsets might contribute to patient outcomes. 
